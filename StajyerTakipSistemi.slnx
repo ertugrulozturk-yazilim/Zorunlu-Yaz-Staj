@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="StajyerTakip.API/StajyerTakip.API.csproj" />
+  <Project Path="StajyerTakip.Business/StajyerTakip.Business.csproj" />
+  <Project Path="StajyerTakip.DataAccess/StajyerTakip.DataAccess.csproj" />
+  <Project Path="StajyerTakip.Entities/StajyerTakip.Entities.csproj" />
+</Solution>

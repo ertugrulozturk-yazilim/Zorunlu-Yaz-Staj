@@ -1,0 +1,11 @@
+@StajyerTakip.API_HostAddress = http://localhost:5237
+
+GET {{StajyerTakip.API_HostAddress}}/todos/
+Accept: application/json
+
+###
+
+GET {{StajyerTakip.API_HostAddress}}/todos/1
+Accept: application/json
+
+###
