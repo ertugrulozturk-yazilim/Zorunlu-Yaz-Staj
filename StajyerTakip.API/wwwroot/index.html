@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Stajyer görevlerini ekleyin, takip edin ve tamamlayın.">
+  <title>Görev Yönetim Paneli</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="container">
+    <header class="page-header">
+      <div><p class="eyebrow">STAJYER GÖREV TAKİP SİSTEMİ</p><h1>Görev Yönetim Paneli</h1><p class="subtitle">Görevleri planla, ilerlemeyi takip et.</p></div>
+      <button class="button button-secondary" id="yenile" type="button">Listeyi yenile</button>
+    </header>
+    <div id="bildirim" class="notice" role="status" aria-live="polite" hidden></div>
+    <section class="summary" aria-label="Görev özeti">
+      <div class="summary-item"><span>Toplam görev</span><strong id="toplam">—</strong></div>
+      <div class="summary-item"><span>Yapılacak</span><strong id="yapilacak">—</strong></div>
+      <div class="summary-item"><span>Devam ediyor</span><strong id="devam">—</strong></div>
+      <div class="summary-item"><span>Tamamlandı</span><strong id="tamamlandi">—</strong></div>
+    </section>
+    <div class="layout">
+      <section class="card form-card" aria-labelledby="form-baslik">
+        <h2 id="form-baslik">Yeni Görev Tanımla</h2>
+        <p class="section-description">Görevi bir personele ata.</p>
+        <form id="gorevFormu">
+          <div class="field"><label for="personel">Personel</label><select id="personel" name="personel" required disabled><option value="">Personeller yükleniyor…</option></select><p id="personel-bilgi" class="field-hint"></p></div>
+          <div class="field"><label for="baslik">Görev başlığı</label><input id="baslik" name="baslik" type="text" required maxlength="150" placeholder="Örn. API testlerini tamamla" autocomplete="off"></div>
+          <div class="field"><label for="aciklama">Açıklama <span class="optional">(isteğe bağlı)</span></label><textarea id="aciklama" name="aciklama" rows="5" maxlength="2000" placeholder="Görevle ilgili ayrıntılar…"></textarea><div class="field-hint character-count"><span id="karakter">0</span> / 2000</div></div>
+          <button id="kaydet" class="button button-primary button-full" type="submit" disabled>Görevi kaydet</button>
+        </form>
+      </section>
+      <section class="card list-card" aria-labelledby="liste-baslik">
+        <div class="list-heading"><div><h2 id="liste-baslik">Aktif Görev Listesi</h2><p class="section-description" id="liste-bilgi">Görevler yükleniyor…</p></div></div>
+        <div class="filters"><label class="search-label" for="arama"><span class="sr-only">Görev veya personel ara</span><input id="arama" type="search" placeholder="Görev veya personel ara…"></label><label for="durum-filtre"><span class="sr-only">Duruma göre filtrele</span><select id="durum-filtre"><option value="">Tüm durumlar</option><option>Yapılacak</option><option>Devam Ediyor</option><option>Tamamlandı</option></select></label></div>
+        <div class="table-wrapper"><table><thead><tr><th scope="col">Görev</th><th scope="col">Personel</th><th scope="col">Durum</th><th scope="col"><span class="sr-only">İşlem</span></th></tr></thead><tbody id="gorevTablosu"><tr><td colspan="4" class="empty-state">Görevler yükleniyor…</td></tr></tbody></table></div>
+      </section>
+    </div>
+    <footer class="page-footer">Ertuğrul Öztürk · Stajyer Görev Takip Sistemi</footer>
+  </main>
+</body>
+</html>

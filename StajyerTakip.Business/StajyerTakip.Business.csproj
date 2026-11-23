@@ -1,19 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
+<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.9" />
+    <ProjectReference Include="../StajyerTakip.Entities/StajyerTakip.Entities.csproj" />
+    <ProjectReference Include="../StajyerTakip.DataAccess/StajyerTakip.DataAccess.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\StajyerTakip.DataAccess\StajyerTakip.DataAccess.csproj" />
-    <ProjectReference Include="..\StajyerTakip.Entities\StajyerTakip.Entities.csproj" />
-  </ItemGroup>
-
 </Project>

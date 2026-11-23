@@ -1,184 +1,61 @@
-﻿using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
+using StajyerTakip.DataAccess;
 using StajyerTakip.Entities;
-using System;
-using System.Collections.Generic;
 
-namespace StajyerTakip.Business
+namespace StajyerTakip.Business;
+
+public sealed class GorevService(IGorevRepository gorevRepository, IPersonelRepository personelRepository) : IGorevService
 {
-    public class GorevService : IGorevService
+    public async Task<IReadOnlyList<GorevDTO>> TumunuGetirAsync(CancellationToken cancellationToken = default)
+        => (await gorevRepository.TumunuGetirAsync(cancellationToken)).Select(DtoyaCevir).ToArray();
+
+    public async Task<GorevDTO> GetirAsync(int id, CancellationToken cancellationToken = default)
+        => DtoyaCevir(await gorevRepository.GetirAsync(id, cancellationToken)
+            ?? throw new IslemHatasi(IslemHataTuru.Bulunamadi, "Görev bulunamadı."));
+
+    public async Task<GorevDTO> EkleAsync(GorevOlusturDTO dto, CancellationToken cancellationToken = default)
     {
-        private readonly string _connectionString;
+        var baslik = dto.Baslik?.Trim() ?? "";
+        var aciklama = string.IsNullOrWhiteSpace(dto.Aciklama) ? null : dto.Aciklama.Trim();
+        if (baslik.Length is < 1 or > 150)
+            throw new IslemHatasi(IslemHataTuru.GecersizVeri, "Başlık 1 ile 150 karakter arasında olmalıdır.");
+        if (aciklama?.Length > 2000)
+            throw new IslemHatasi(IslemHataTuru.GecersizVeri, "Açıklama en fazla 2000 karakter olabilir.");
+        if (dto.PersonelId < 1 || !await personelRepository.VarMiAsync(dto.PersonelId, cancellationToken))
+            throw new IslemHatasi(IslemHataTuru.GecersizVeri, "Seçilen personel bulunamadı. Personel listesini yenileyin.");
 
-        public GorevService(IConfiguration configuration)
-        {
-            _connectionString = configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException(
-                    "DefaultConnection bulunamadı.");
-        }
-
-        // TÜM GÖREVLERİ GETİR
-        public List<GorevDTO> TumGorevleriGetir()
-        {
-            var liste = new List<GorevDTO>();
-
-            using var con = new SqlConnection(_connectionString);
-
-            using var cmd = new SqlCommand(@"
-                SELECT
-                    Id,
-                    PersonelId,
-                    Baslik,
-                    Aciklama,
-                    Durum
-                FROM dbo.Gorevler
-                WHERE IsDeleted = 0
-                ORDER BY Id DESC", con);
-
-            con.Open();
-
-            using var reader = cmd.ExecuteReader();
-
-            while (reader.Read())
-            {
-                liste.Add(new GorevDTO
-                {
-                    Id = reader.GetInt32(0),
-                    PersonelId = reader.GetInt32(1),
-                    Baslik = reader.GetString(2),
-                    Aciklama = reader.IsDBNull(3)
-                        ? string.Empty
-                        : reader.GetString(3),
-                    Durum = reader.GetString(4)
-                });
-            }
-
-            return liste;
-        }
-
-        // YENİ GÖREV EKLE
-        public bool GorevEkle(GorevDTO gorev)
-        {
-            if (string.IsNullOrWhiteSpace(gorev.Baslik))
-                return false;
-
-            try
-            {
-                using var con = new SqlConnection(_connectionString);
-
-                using var cmd = new SqlCommand(@"
-                    INSERT INTO dbo.Gorevler
-                    (
-                        PersonelId,
-                        Baslik,
-                        Aciklama,
-                        Durum
-                    )
-                    VALUES
-                    (
-                        @PersonelId,
-                        @Baslik,
-                        @Aciklama,
-                        @Durum
-                    )", con);
-
-                cmd.Parameters.AddWithValue(
-                    "@PersonelId",
-                    gorev.PersonelId);
-
-                cmd.Parameters.AddWithValue(
-                    "@Baslik",
-                    gorev.Baslik);
-
-                cmd.Parameters.AddWithValue(
-                    "@Aciklama",
-                    (object?)gorev.Aciklama ?? DBNull.Value);
-
-                cmd.Parameters.AddWithValue(
-                    "@Durum",
-                    string.IsNullOrWhiteSpace(gorev.Durum)
-                        ? "Yapılacak"
-                        : gorev.Durum);
-
-                con.Open();
-
-                return cmd.ExecuteNonQuery() > 0;
-            }
-            catch (SqlException ex)
-            {
-                Console.WriteLine(
-                    $"Veritabanı Hatası: {ex.Message}");
-
-                return false;
-            }
-        }
-
-        // GÖREV DURUMUNU GÜNCELLE
-        public bool DurumGuncelle(int id, string yeniDurum)
-        {
-            if (string.IsNullOrWhiteSpace(yeniDurum))
-                return false;
-
-            try
-            {
-                using var con = new SqlConnection(_connectionString);
-
-                using var cmd = new SqlCommand(@"
-                    UPDATE dbo.Gorevler
-                    SET Durum = @Durum
-                    WHERE Id = @Id
-                      AND IsDeleted = 0", con);
-
-                cmd.Parameters.AddWithValue(
-                    "@Durum",
-                    yeniDurum);
-
-                cmd.Parameters.AddWithValue(
-                    "@Id",
-                    id);
-
-                con.Open();
-
-                return cmd.ExecuteNonQuery() > 0;
-            }
-            catch (SqlException ex)
-            {
-                Console.WriteLine(
-                    $"Güncelleme Hatası: {ex.Message}");
-
-                return false;
-            }
-        }
-
-        // GÖREV SİL
-        // Fiziksel olarak silmez, IsDeleted = 1 yapar.
-        public bool GorevSil(int id)
-        {
-            try
-            {
-                using var con = new SqlConnection(_connectionString);
-
-                using var cmd = new SqlCommand(@"
-                    UPDATE dbo.Gorevler
-                    SET IsDeleted = 1
-                    WHERE Id = @Id
-                      AND IsDeleted = 0", con);
-
-                cmd.Parameters.AddWithValue(
-                    "@Id",
-                    id);
-
-                con.Open();
-
-                return cmd.ExecuteNonQuery() > 0;
-            }
-            catch (SqlException ex)
-            {
-                Console.WriteLine(
-                    $"Silme Hatası: {ex.Message}");
-
-                return false;
-            }
-        }
+        var gorev = new Gorev { PersonelId = dto.PersonelId, Baslik = baslik, Aciklama = aciklama, Durum = GorevDurumu.Yapilacak };
+        return DtoyaCevir(await gorevRepository.EkleAsync(gorev, cancellationToken));
     }
+
+    public async Task<GorevDTO> DurumGuncelleAsync(int id, GorevDurumu durum, byte[] rowVersion, CancellationToken cancellationToken = default)
+    {
+        SurumuDogrula(rowVersion);
+        if (!Enum.IsDefined(durum)) throw new IslemHatasi(IslemHataTuru.GecersizVeri, "Geçersiz görev durumu.");
+        var sonuc = await gorevRepository.DurumGuncelleAsync(id, durum, rowVersion, cancellationToken);
+        if (sonuc is null) await BulunamamaVeyaSurumHatasiAsync(id, cancellationToken);
+        return DtoyaCevir(sonuc!);
+    }
+
+    public async Task SilAsync(int id, byte[] rowVersion, CancellationToken cancellationToken = default)
+    {
+        SurumuDogrula(rowVersion);
+        if (!await gorevRepository.SilAsync(id, rowVersion, cancellationToken))
+            await BulunamamaVeyaSurumHatasiAsync(id, cancellationToken);
+    }
+
+    private async Task BulunamamaVeyaSurumHatasiAsync(int id, CancellationToken cancellationToken)
+    {
+        if (await gorevRepository.GetirAsync(id, cancellationToken) is null)
+            throw new IslemHatasi(IslemHataTuru.Bulunamadi, "Görev bulunamadı veya silinmiş.");
+        throw new IslemHatasi(IslemHataTuru.SurumUyusmazligi,
+            "Bu görev başka bir işlemde değiştirildi. Listeyi yenileyip güncel kayıtla tekrar deneyin.");
+    }
+
+    private static void SurumuDogrula(byte[] rowVersion)
+    {
+        if (rowVersion.Length != 8) throw new IslemHatasi(IslemHataTuru.GecersizVeri, "Geçersiz kayıt sürümü.");
+    }
+
+    private static GorevDTO DtoyaCevir(Gorev g) => new(g.Id, g.PersonelId, g.Baslik, g.Aciklama, g.Durum,
+        g.OlusturmaTarihi, g.BitisTarihi, Convert.ToBase64String(g.RowVersion));
 }

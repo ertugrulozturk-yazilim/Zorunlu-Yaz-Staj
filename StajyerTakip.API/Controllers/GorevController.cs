@@ -1,61 +1,70 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc;
 using StajyerTakip.Business;
 using StajyerTakip.Entities;
 
-namespace StajyerTakip.API.Controllers
+namespace StajyerTakip.API.Controllers;
+
+[ApiController]
+[Route("api/Gorev")]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+public sealed class GorevController(IGorevService service) : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class GorevController : ControllerBase
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<GorevDTO>>> Get(CancellationToken cancellationToken)
+        => Ok(await service.TumunuGetirAsync(cancellationToken));
+
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<GorevDTO>> GetById([Range(1, int.MaxValue)] int id, CancellationToken cancellationToken)
     {
-        private readonly IGorevService _gorevService;
+        var gorev = await service.GetirAsync(id, cancellationToken);
+        Response.Headers.ETag = $"\"{gorev.RowVersion}\"";
+        return Ok(gorev);
+    }
 
-        public GorevController(IGorevService gorevService)
+    [HttpPost]
+    public async Task<ActionResult<GorevDTO>> Post(GorevOlusturDTO dto, CancellationToken cancellationToken)
+    {
+        var gorev = await service.EkleAsync(dto, cancellationToken);
+        Response.Headers.ETag = $"\"{gorev.RowVersion}\"";
+        return CreatedAtAction(nameof(GetById), new { id = gorev.Id }, gorev);
+    }
+
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<GorevDTO>> Put([Range(1, int.MaxValue)] int id, GorevDurumGuncelleDTO dto, CancellationToken cancellationToken)
+    {
+        var version = SurumuOku();
+        if (version is null) return SurumHatasi();
+        var gorev = await service.DurumGuncelleAsync(id, dto.Durum!.Value, version, cancellationToken);
+        Response.Headers.ETag = $"\"{gorev.RowVersion}\"";
+        return Ok(gorev);
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete([Range(1, int.MaxValue)] int id, CancellationToken cancellationToken)
+    {
+        var version = SurumuOku();
+        if (version is null) return SurumHatasi();
+        await service.SilAsync(id, version, cancellationToken);
+        return NoContent();
+    }
+
+    private byte[]? SurumuOku()
+    {
+        var value = Request.Headers.IfMatch.ToString();
+        if (value.Length < 2 || value[0] != '"' || value[^1] != '"') return null;
+        try
         {
-            _gorevService = gorevService;
+            var bytes = Convert.FromBase64String(value[1..^1]);
+            return bytes.Length == 8 ? bytes : null;
         }
+        catch (FormatException) { return null; }
+    }
 
-        // TÜM GÖREVLERİ GETİR
-        [HttpGet]
-        public IActionResult Get()
-        {
-            return Ok(_gorevService.TumGorevleriGetir());
-        }
-
-        // YENİ GÖREV EKLE
-        [HttpPost]
-        public IActionResult Post([FromBody] GorevDTO yeniGorev)
-        {
-            var basariliMi = _gorevService.GorevEkle(yeniGorev);
-
-            if (!basariliMi)
-                return BadRequest("Geçersiz veri girdiniz.");
-
-            return StatusCode(201, "Görev başarıyla eklendi.");
-        }
-
-        // GÖREV DURUMUNU GÜNCELLE
-        [HttpPut("{id}")]
-        public IActionResult Put(int id, [FromBody] string yeniDurum)
-        {
-            var basariliMi = _gorevService.DurumGuncelle(id, yeniDurum);
-
-            if (!basariliMi)
-                return NotFound("Görev bulunamadı.");
-
-            return Ok("Durum güncellendi.");
-        }
-
-        // GÖREV SİL
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
-        {
-            var basariliMi = _gorevService.GorevSil(id);
-
-            if (!basariliMi)
-                return NotFound("Görev bulunamadı.");
-
-            return Ok("Görev başarıyla silindi.");
-        }
+    private ObjectResult SurumHatasi()
+    {
+        var missing = string.IsNullOrWhiteSpace(Request.Headers.IfMatch.ToString());
+        return Problem(statusCode: missing ? 428 : 400, title: missing ? "Kayıt sürümü gerekli" : "Geçersiz kayıt sürümü",
+            detail: "Önce görevi GET ile alın. RowVersion değerini If-Match başlığında çift tırnak içinde gönderin.");
     }
 }
