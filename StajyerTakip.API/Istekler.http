@@ -1,0 +1,36 @@
+@baseUrl = http://localhost:5237
+@personelId = 0
+@gorevId = EKLENEN_GOREVIN_IDSI
+@rowVersion = GET_YANITINDAKI_ROWVERSION
+
+### Önce geçerli personel kimliğini öğren ve yukarıdaki personelId değerini değiştir.
+GET {{baseUrl}}/api/Personel
+
+### Aktif görevler
+GET {{baseUrl}}/api/Gorev
+
+### Görev oluştur
+POST {{baseUrl}}/api/Gorev
+Content-Type: application/json
+
+{
+  "personelId": {{personelId}},
+  "baslik": "Sunum demo görevi",
+  "aciklama": "Repository, enum ve RowVersion akışını göster."
+}
+
+### Oluşturulan görevin id değerini değişkene yaz; güncel sürümü öğren.
+GET {{baseUrl}}/api/Gorev/{{gorevId}}
+
+### GET yanıtındaki rowVersion değerini değişkene yaz. Her değişiklikten sonra sürüm yenilenir.
+PUT {{baseUrl}}/api/Gorev/{{gorevId}}
+Content-Type: application/json
+If-Match: "{{rowVersion}}"
+
+{
+  "durum": "Devam Ediyor"
+}
+
+### Yalnızca demo görevini, güncel rowVersion ile sil.
+DELETE {{baseUrl}}/api/Gorev/{{gorevId}}
+If-Match: "{{rowVersion}}"

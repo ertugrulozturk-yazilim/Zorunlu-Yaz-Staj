@@ -1,19 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
-	<PropertyGroup>
-		<TargetFramework>net10.0</TargetFramework>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>enable</ImplicitUsings>
-	</PropertyGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.9" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\StajyerTakip.Business\StajyerTakip.Business.csproj" />
-		<ProjectReference Include="..\StajyerTakip.Entities\StajyerTakip.Entities.csproj" />
-	</ItemGroup>
-
+  <PropertyGroup>
+    <UserSecretsId>stajyer-takip-sunum-ertugrul-ozturk</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../StajyerTakip.Business/StajyerTakip.Business.csproj" />
+    <ProjectReference Include="../StajyerTakip.DataAccess/StajyerTakip.DataAccess.csproj" />
+    <ProjectReference Include="../StajyerTakip.Entities/StajyerTakip.Entities.csproj" />
+  </ItemGroup>
 </Project>

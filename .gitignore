@@ -1,6 +1,11 @@
-**/bin/
-**/obj/
+bin/
+obj/
 .vs/
+TestResults/
 *.user
-.env
-appsettings.Development.json
+*.suo
+appsettings.Local.json
+*.pfx
+*.p12
+node_modules/
+ArayuzTestleri/results.json
